@@ -45,42 +45,6 @@ const Home = () => (
         Imagine Daggers
       </h1>
       </StyledHeader>
-      <footer
-        css={css`
-          grid-row: 3;
-          grid-column: 2 / span 10;
-          text-align: center;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          flex-direction: column;
-          > * {
-            font-size: 10px;
-          }
-        `}
-      >
-        <h6 css={css`
-          margin-bottom: 8px;
-        `}>Credits</h6>
-        <div>
-          Icons made by{' '}
-          <a href="https://www.freepik.com/" title="Freepik">
-            Freepik
-          </a>{' '}
-          from{' '}
-          <a href="https://www.flaticon.com/" title="Flaticon">
-            www.flaticon.com
-          </a>{' '}
-          is licensed by{' '}
-          <a
-            href="http://creativecommons.org/licenses/by/3.0/"
-            title="Creative Commons BY 3.0"
-            target="_blank"
-          >
-            CC 3.0 BY
-          </a>
-        </div>
-      </footer>
     </Layout>
   </Fragment>
 );
