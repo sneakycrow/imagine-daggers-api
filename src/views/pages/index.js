@@ -44,6 +44,7 @@ const Home = () => (
       >
         Imagine Daggers
       </h1>
+      <a href="http://eepurl.com/guytNT">Sign up for the mailing list</a>
       </StyledHeader>
     </Layout>
   </Fragment>
