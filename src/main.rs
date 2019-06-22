@@ -39,19 +39,6 @@ fn query(nm: String, pass: String, pool: web::Data<Pool>) -> Result<models::User
   Ok(items.pop().unwrap())
 }
 
-// ASYNC REQUEST HANDLER
-fn add(
-  name: web::Path<String>,
-  pass: web::Path<String>,
-  pool: web::Data<Pool>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-  // Run diesel blocking code
-  web::block(move || query(name.into_inner(), pass.into_inner(), pool)).then(|res| match res {
-    Ok(user) => Ok(HttpResponse::Ok().json(UserResponse { name: user.name, id: user.id })),
-    Err(_) => Ok(HttpResponse::InternalServerError().into()),
-  })
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 struct MyUser {
   name: String,
@@ -92,21 +79,13 @@ fn index_add(
       match r_obj {
         Ok(obj) => Either::A(
           web::block(move || query(obj.name, obj.password, pool)).then(|res| match res {
-            Ok(user) => Ok(HttpResponse::Ok().json(UserResponse { name: user.name, id: user.id })),
+            Ok(user) => Ok(HttpResponse::Ok().json(UserResponse { name: user.name, id: user.id})),
             Err(_) => Ok(HttpResponse::InternalServerError().into()),
           }),
         ),
         Err(_) => Either::B(err(error::ErrorBadRequest("JSON DECODE FAILED"))),
       }
     })
-}
-
-fn add2(item: web::Json<MyUser>, pool: web::Data<Pool>) -> impl Future<Item = HttpResponse, Error = Error> {
-  // Run diesel blocking code
-  web::block(move || query(item.name.to_owned(), item.password.to_owned(), pool)).then(|res| match res {
-    Ok(user) => Ok(HttpResponse::Ok().json(UserResponse { name: user.name, id: user.id })),
-    Err(_) => Ok(HttpResponse::InternalServerError().into())
-  })
 }
 
 fn main() -> std::io::Result<()> {
@@ -127,23 +106,7 @@ fn main() -> std::io::Result<()> {
     .data(pool.clone())
     // enable logger
     .wrap(middleware::Logger::default())
-    .service(
-      web::resource("/add2")
-        .data(
-          web::JsonConfig::default()
-          .limit(4096)
-          .error_handler(|err, _| {
-            error::InternalError::from_response(
-              err,
-              HttpResponse::Conflict().finish()
-            )
-            .into()
-          })
-        )
-        .route(web::post().to_async(add2))
-    )
     .service(web::resource("/add").route(web::post().to_async(index_add)))
-    .service(web::resource("/add/{name}").route(web::get().to_async(add)))
   })
   .bind("127.0.0.1:8081")?
   .run()
