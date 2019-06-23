@@ -3,15 +3,24 @@ extern crate diesel;
 #[macro_use]
 extern crate serde_derive;
 extern crate bcrypt;
+#[macro_use]
+extern crate actix_web;
 
-use actix_web::{error, middleware, web, App, Error, HttpResponse, HttpServer};
+
+use actix_files as fs;
+use actix_session::Session;
+use actix_web::http::StatusCode;
+use actix_web::{
+  error, guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer, Result,
+};
+use bcrypt::{hash, DEFAULT_COST};
 use bytes::BytesMut;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv;
 use futures::future::{err, Either};
 use futures::{Future, Stream};
-use bcrypt::{DEFAULT_COST, hash};
+
 
 mod models;
 mod schema;
@@ -19,7 +28,11 @@ mod schema;
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 // DIESEL QUERY
-fn query(nm: String, pass: String, pool: web::Data<Pool>) -> Result<models::User, diesel::result::Error> {
+fn query(
+  nm: String,
+  pass: String,
+  pool: web::Data<Pool>,
+) -> Result<models::User, diesel::result::Error> {
   use self::schema::users::dsl::*;
 
   let uuid = format!("{}", uuid::Uuid::new_v4()); // UUID
@@ -27,7 +40,7 @@ fn query(nm: String, pass: String, pool: web::Data<Pool>) -> Result<models::User
   let new_user = models::NewUser {
     id: &uuid,
     name: nm.as_str(),
-    password: &hashed_password
+    password: &hashed_password,
   };
 
   let conn: &PgConnection = &pool.get().unwrap();
@@ -42,16 +55,44 @@ fn query(nm: String, pass: String, pool: web::Data<Pool>) -> Result<models::User
 #[derive(Debug, Serialize, Deserialize)]
 struct MyUser {
   name: String,
-  password: String
+  password: String,
 }
 
 #[derive(Serialize)]
 struct UserResponse {
   name: String,
-  id: String
+  id: String,
 }
 
 const MAX_SIZE: usize = 262_144; // Max payload size is 256l
+
+/// simple index handler
+#[get("/")]
+fn index_page(session: Session, req: HttpRequest) -> Result<HttpResponse> {
+  println!("{:?}", req);
+
+  // session
+  let mut counter = 1;
+  if let Some(count) = session.get::<i32>("counter")? {
+    println!("SESSION value: {}", count);
+    counter = count + 1;
+  }
+
+  // set counter to session
+  session.set("counter", counter)?;
+
+  // response
+  Ok(
+    HttpResponse::build(StatusCode::OK)
+      .content_type("text/html; charset=utf-8")
+      .body(include_str!("../views/out/index.html")),
+  )
+}
+
+/// 404 handler
+fn p404() -> Result<fs::NamedFile> {
+  Ok(fs::NamedFile::open("static/404.html")?.set_status_code(StatusCode::NOT_FOUND))
+}
 
 // MANUALLY LOAD REQUEST PAYLOAD AND PARSE JSON OBJECT
 fn index_add(
@@ -79,7 +120,10 @@ fn index_add(
       match r_obj {
         Ok(obj) => Either::A(
           web::block(move || query(obj.name, obj.password, pool)).then(|res| match res {
-            Ok(user) => Ok(HttpResponse::Ok().json(UserResponse { name: user.name, id: user.id})),
+            Ok(user) => Ok(HttpResponse::Ok().json(UserResponse {
+              name: user.name,
+              id: user.id,
+            })),
             Err(_) => Ok(HttpResponse::InternalServerError().into()),
           }),
         ),
@@ -103,10 +147,22 @@ fn main() -> std::io::Result<()> {
   // START HTTP SERVER
   HttpServer::new(move || {
     App::new()
-    .data(pool.clone())
-    // enable logger
-    .wrap(middleware::Logger::default())
-    .service(web::resource("/add").route(web::post().to_async(index_add)))
+      .data(pool.clone())
+      // enable logger
+      .wrap(middleware::Logger::default())
+      .service(web::resource("/add").route(web::post().to_async(index_add)))
+      .service(index_page)
+      .default_service(
+        // 404 for GET request
+        web::resource("")
+          .route(web::get().to(p404))
+          // all requests that are not `GET`
+          .route(
+            web::route()
+              .guard(guard::Not(guard::Get()))
+              .to(|| HttpResponse::MethodNotAllowed()),
+          ),
+      )
   })
   .bind("127.0.0.1:8081")?
   .run()
