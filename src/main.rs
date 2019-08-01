@@ -1,13 +1,9 @@
 extern crate actix_web;
-extern crate actix_files;
-extern crate env_logger;
 
 use actix_web::Result;
-use actix_web::http::{StatusCode};
-use actix_files::NamedFile;
 
-fn index() -> Result<NamedFile> {
-  Ok(NamedFile::open("dist/index.html")?.set_status_code(StatusCode::NOT_FOUND))
+fn index() -> Result<String> {
+  Ok(format!("Hello World!"))
 }
 
 fn main() {
