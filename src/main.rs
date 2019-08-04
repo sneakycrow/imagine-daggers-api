@@ -1,7 +1,8 @@
 extern crate dotenv;
 
 use actix_web::client::Client;
-use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{http, middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_cors::Cors;
 use futures::Future;
 use serde::{Deserialize, Serialize};
 use dotenv::dotenv;
@@ -43,6 +44,12 @@ fn main() {
   HttpServer::new(|| {
     App::new()
       .wrap(middleware::Logger::default())
+      .wrap(
+            Cors::new()
+              .allowed_methods(vec!["GET", "POST"])
+              .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+              .allowed_header(http::header::CONTENT_TYPE)
+              .max_age(3600))
       .data(web::JsonConfig::default().limit(4096))
       .service(web::resource("/signup").route(web::post().to_async(signup)))
   })
