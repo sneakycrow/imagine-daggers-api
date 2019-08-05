@@ -35,7 +35,7 @@ fn signup(item: web::Json<SignupEmail>) -> impl Future<Item = HttpResponse, Erro
 }
 
 fn index() -> &'static str {
-  "Hello World"
+  "Hello World, from Imagine Daggers API"
 }
 
 fn main() {
