@@ -38,7 +38,7 @@ fn index() -> &'static str {
   "Hello World, from Imagine Daggers API"
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
   dotenv().ok();
   std::env::set_var("RUST_LOG", "actix_web=info");
   env_logger::init();
@@ -56,8 +56,6 @@ fn main() {
       .service(web::resource("/signup").route(web::post().to_async(signup)))
       .service(web::resource("/").to(index))
   })
-  .bind("127.0.0.1:8080")
-  .unwrap()
+  .bind("127.0.0.1:8080")?
   .run()
-  .unwrap()
 }
