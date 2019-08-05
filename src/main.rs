@@ -48,11 +48,10 @@ fn main() {
       .wrap(middleware::Logger::default())
       .wrap(
             Cors::new()
-              .allowed_origin("All")
+              .allowed_origin("Some")
               .allowed_methods(vec!["GET", "POST"])
               .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
               .allowed_header(http::header::CONTENT_TYPE)
-              .send_wildcard()
               .max_age(3600))
       .data(web::JsonConfig::default().limit(4096))
       .service(web::resource("/signup").route(web::post().to_async(signup)))
