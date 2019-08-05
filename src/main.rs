@@ -1,7 +1,7 @@
 extern crate dotenv;
 
 use actix_web::client::Client;
-use actix_web::{http, middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{http, middleware, web, App, Error, HttpResponse, HttpServer, HttpRequest};
 use actix_cors::Cors;
 use futures::Future;
 use serde::{Deserialize, Serialize};
@@ -36,6 +36,10 @@ fn signup(item: web::Json<SignupEmail>) -> impl Future<Item = HttpResponse, Erro
     })
 }
 
+fn index(req: HttpRequest) -> &'static str {
+  "Hello World"
+}
+
 fn main() {
   dotenv().ok();
   std::env::set_var("RUST_LOG", "actix_web=info");
@@ -52,6 +56,7 @@ fn main() {
               .max_age(3600))
       .data(web::JsonConfig::default().limit(4096))
       .service(web::resource("/signup").route(web::post().to_async(signup)))
+      .service(web::resource("/").to(index))
   })
   .bind("127.0.0.1:8080")
   .unwrap()
