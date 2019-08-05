@@ -1,7 +1,5 @@
-extern crate dotenv;
-
 use actix_web::client::Client;
-use actix_web::{http, middleware, web, App, Error, HttpResponse, HttpServer, HttpRequest};
+use actix_web::{http, middleware, web, App, Error, HttpResponse, HttpServer};
 use actix_cors::Cors;
 use futures::Future;
 use serde::{Deserialize, Serialize};
@@ -36,7 +34,7 @@ fn signup(item: web::Json<SignupEmail>) -> impl Future<Item = HttpResponse, Erro
     })
 }
 
-fn index(req: HttpRequest) -> &'static str {
+fn index() -> &'static str {
   "Hello World"
 }
 
