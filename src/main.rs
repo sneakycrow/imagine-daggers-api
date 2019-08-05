@@ -48,7 +48,6 @@ fn main() {
       .wrap(middleware::Logger::default())
       .wrap(
             Cors::new()
-              .allowed_origin("Some")
               .allowed_methods(vec!["GET", "POST"])
               .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
               .allowed_header(http::header::CONTENT_TYPE)
