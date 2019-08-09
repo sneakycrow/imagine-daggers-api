@@ -7,6 +7,7 @@ use routes::{subscribe, index};
 
 fn main() -> std::io::Result<()> {
   dotenv().ok();
+  openssl_probe::init_ssl_cert_env_vars();
   std::env::set_var("RUST_LOG", "actix_web=info");
   env_logger::init();
 
@@ -23,6 +24,6 @@ fn main() -> std::io::Result<()> {
       .service(web::resource("/signup").route(web::post().to_async(subscribe)))
       .service(web::resource("/").to(index))
   })
-  .bind("127.0.0.1:8080")?
+  .bind("0.0.0.0:8080")?
   .run()
 }
