@@ -2,24 +2,19 @@ use actix_web::client::Client;
 use futures::Future;
 use std::env;
 use actix_web::{web, Error, HttpResponse};
-use serde::{Deserialize, Serialize};
+use crate::models;
+use diesel::prelude::*;
+use diesel::r2d2::{self, ConnectionManager};
+use uuid::Uuid;
+use diesel::pg::PgConnection;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SignupEmail {
-  email: String,
-}
+type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Contact {
-  contacts: Vec<SignupEmail>
-}
-
-
-pub fn subscribe(item: web::Json<SignupEmail>) -> impl Future<Item = HttpResponse, Error = Error> {
+pub fn subscribe(item: web::Json<models::SignupEmail>) -> impl Future<Item = HttpResponse, Error = Error> {
   Client::new()
     .put("https://api.sendgrid.com/v3/marketing/contacts")
     .bearer_auth(env::var("SENDGRID_API_KEY").unwrap())
-    .send_json(&Contact {
+    .send_json(&models::Contact {
       contacts: vec![item.0]
     })
     .map_err(Error::from)
@@ -30,6 +25,39 @@ pub fn subscribe(item: web::Json<SignupEmail>) -> impl Future<Item = HttpRespons
         .and_then(|body| {
           Ok(HttpResponse::Ok().body(body))
         })
+    })
+}
+
+pub fn create_user<'a>(new_user: models::JsonUser, pool: web::Data<Pool>) -> Result<models::User, diesel::result::Error> {
+  use crate::schema::users::dsl::*;
+
+  let conn: &PgConnection = &pool.get().unwrap();
+  
+  let new_user_uuid = format!("{}", Uuid::new_v4());
+  
+  let new_user_with_id = models::NewUser {
+    id: &new_user_uuid,
+    username: &new_user.username,
+    password: &new_user.password,
+    email: &new_user.email
+  };
+
+  diesel::insert_into(users)
+    .values(&new_user_with_id)
+    .execute(conn)?;
+
+  let mut items = users.filter(id.eq(&new_user_uuid)).load::<models::User>(conn)?;
+  Ok(items.pop().unwrap())
+}
+
+pub fn register(
+    item: web::Json<models::JsonUser>,
+    pool: web::Data<Pool>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    // run diesel blocking code
+    web::block(move || create_user(item.into_inner(), pool)).then(|res| match res {
+        Ok(user) => Ok(HttpResponse::Ok().json(user)),
+        Err(_) => Ok(HttpResponse::InternalServerError().into()),
     })
 }
 
