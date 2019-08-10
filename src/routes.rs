@@ -61,6 +61,21 @@ pub fn register(
     })
 }
 
+pub fn list_users(
+  pool: web::Data<Pool>
+) -> HttpResponse {
+    use crate::schema::users::dsl::*;
+
+    let conn: &PgConnection = &pool.get().unwrap();
+
+    let results = users.limit(5).load::<models::User>(conn);
+
+    match results {
+      Ok(results) => HttpResponse::Ok().json(results),
+      Err(_) => HttpResponse::InternalServerError().into()
+    }
+}
+
 pub fn index() -> &'static str {
   "Hello World, from Imagine Daggers API"
 }
