@@ -7,6 +7,7 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use uuid::Uuid;
 use diesel::pg::PgConnection;
+use bcrypt::{DEFAULT_COST, hash};
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -35,10 +36,12 @@ pub fn create_user<'a>(new_user: models::JsonUser, pool: web::Data<Pool>) -> Res
   
   let new_user_uuid = format!("{}", Uuid::new_v4());
   
+  let hashed_password = hash(&new_user.password, DEFAULT_COST);
+
   let new_user_with_id = models::NewUser {
     id: &new_user_uuid,
     username: &new_user.username,
-    password: &new_user.password,
+    password: &hashed_password.unwrap(),
     email: &new_user.email
   };
 
