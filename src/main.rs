@@ -24,6 +24,7 @@ fn main() -> std::io::Result<()> {
       .build(manager)
       .expect("Failed to create pool.");
 
+  let listen_port = std::env::var("PORT").expect("PORT var needs to be defined in environment");
   HttpServer::new(move || {
     App::new()
       .data(pool.clone())
@@ -40,6 +41,6 @@ fn main() -> std::io::Result<()> {
       .service(web::resource("/users").route(web::get().to(list_users)))
       .service(web::resource("/").to(index))
   })
-  .bind("0.0.0.0:8080")?
+  .bind(format!("0.0.0.0:{}", listen_port))?
   .run()
 }
