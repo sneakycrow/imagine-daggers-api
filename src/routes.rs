@@ -11,6 +11,7 @@ use bcrypt::{DEFAULT_COST, hash};
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
+// Subscribe the user to the maillist on sendgrid
 pub fn subscribe(item: web::Json<models::SignupEmail>) -> impl Future<Item = HttpResponse, Error = Error> {
   Client::new()
     .put("https://api.sendgrid.com/v3/marketing/contacts")
@@ -29,15 +30,12 @@ pub fn subscribe(item: web::Json<models::SignupEmail>) -> impl Future<Item = Htt
     })
 }
 
+// Create a new user
 pub fn create_user<'a>(new_user: models::JsonUser, pool: web::Data<Pool>) -> Result<models::User, diesel::result::Error> {
   use crate::schema::users::dsl::*;
-
   let conn: &PgConnection = &pool.get().unwrap();
-  
   let new_user_uuid = format!("{}", Uuid::new_v4());
-  
   let hashed_password = hash(&new_user.password, DEFAULT_COST);
-
   let new_user_with_id = models::NewUser {
     id: &new_user_uuid,
     username: &new_user.username,
@@ -53,6 +51,7 @@ pub fn create_user<'a>(new_user: models::JsonUser, pool: web::Data<Pool>) -> Res
   Ok(items.pop().unwrap())
 }
 
+// Route for registering a new user
 pub fn register(
     item: web::Json<models::JsonUser>,
     pool: web::Data<Pool>,
@@ -64,6 +63,7 @@ pub fn register(
     })
 }
 
+// Route for listing all users
 pub fn list_users(
   pool: web::Data<Pool>
 ) -> HttpResponse {
@@ -79,6 +79,20 @@ pub fn list_users(
     }
 }
 
+// Route for getting a specific user by email
+pub fn get_user(pool: web::Data<Pool>) -> HttpResponse {
+  use crate::schema::users::dsl::*;
+
+  let conn: &PgConnection = &pool.get().unwrap();
+
+  let results = users.load::<models::User>(conn);
+
+  match results {
+    Ok(results) => HttpResponse::Ok().json(results),
+    Err(_) => HttpResponse::InternalServerError().into()
+  }
+}
+// Index route
 pub fn index() -> &'static str {
   "Hello World, from Imagine Daggers API"
 }
