@@ -28,6 +28,12 @@ pub struct NewUser<'a> {
   pub email: &'a str
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UserLogin {
+  pub username: String,
+  pub password: String
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JsonUser {
   pub username: String,
