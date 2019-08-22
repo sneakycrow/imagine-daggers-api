@@ -1,7 +1,7 @@
 FROM ekidd/rust-musl-builder:nightly as builder
 ADD . ./
 RUN sudo chown -R rust:rust /home/rust
-RUN cargo install diesel-cli
+RUN cargo install diesel_cli
 RUN diesel setup
 RUN cargo build --release
 
