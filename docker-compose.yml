@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    ports: 
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  api:
+    build: .
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8000:8000
+    environment:
+      DATABASE_URL: postgres://postgres:example@db:5432/id_test
+      SENDGRID_API_KEY: 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
+      PORT: 8000
+volumes:
+  pgdata:
