@@ -1,13 +1,13 @@
 use actix_web::client::Client;
 use futures::Future;
 use std::env;
-use actix_web::{web, Error, HttpResponse, HttpRequest};
+use actix_web::{web, Error, HttpResponse};
 use crate::models;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use uuid::Uuid;
 use diesel::pg::PgConnection;
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{DEFAULT_COST, hash, verify};
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -61,6 +61,30 @@ pub fn register(
         Ok(user) => Ok(HttpResponse::Ok().json(user)),
         Err(_) => Ok(HttpResponse::InternalServerError().into()),
     })
+}
+
+// Route for authenticating a user with a jwt token
+pub fn login_user(
+  item: web::Json<models::UserLogin>,
+  pool: web::Data<Pool>
+) -> HttpResponse {
+  use crate::schema::users::dsl::*;
+
+  let conn: &PgConnection = &pool.get().unwrap();
+  let results: Result<models::User, _> = users.filter(username.eq(item.0.username)).first(conn);
+  
+
+  match results {
+    Ok(results) => {
+      let is_valid = verify(item.0.password, &results.password);
+      if is_valid.unwrap() {
+        HttpResponse::Ok().json(results)
+      } else {
+        HttpResponse::NotFound().into()
+      }
+    },
+    Err(_) => HttpResponse::InternalServerError().into()
+  }
 }
 
 // Route for listing all users
