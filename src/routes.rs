@@ -1,7 +1,7 @@
 use actix_web::client::Client;
 use futures::Future;
 use std::env;
-use actix_web::{web, Error, HttpResponse};
+use actix_web::{web, Error, HttpResponse, HttpRequest};
 use crate::models;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
@@ -80,18 +80,19 @@ pub fn list_users(
 }
 
 // Route for getting a specific user by email
-pub fn get_user(pool: web::Data<Pool>) -> HttpResponse {
+pub fn get_user(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpResponse {
   use crate::schema::users::dsl::*;
 
   let conn: &PgConnection = &pool.get().unwrap();
 
-  let results = users.load::<models::User>(conn);
+  let results: Result<models::User, _> = users.filter(username.eq(&path.0)).first(conn);
 
   match results {
     Ok(results) => HttpResponse::Ok().json(results),
     Err(_) => HttpResponse::InternalServerError().into()
   }
 }
+
 // Index route
 pub fn index() -> &'static str {
   "Hello World, from Imagine Daggers API"
