@@ -8,6 +8,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use uuid::Uuid;
 use diesel::pg::PgConnection;
 use bcrypt::{DEFAULT_COST, hash, verify};
+use jwt::{encode, Header};
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -78,7 +79,16 @@ pub fn login_user(
     Ok(results) => {
       let is_valid = verify(item.0.password, &results.password);
       if is_valid.unwrap() {
-        HttpResponse::Ok().json(results)
+        let user_response = models::UserResponse {
+          id: results.id,
+          username: results.username,
+          email: results.email
+        };
+        let encoded_user = encode(&Header::default(), &user_response, "secret".as_ref());
+        match encoded_user {
+          Ok(jwt) => HttpResponse::Ok().json(jwt),
+          Err(_) => HttpResponse::InternalServerError().into()
+        }
       } else {
         HttpResponse::NotFound().into()
       }
@@ -112,7 +122,18 @@ pub fn get_user(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpRespon
   let results: Result<models::User, _> = users.filter(username.eq(&path.0)).first(conn);
 
   match results {
-    Ok(results) => HttpResponse::Ok().json(results),
+    Ok(results) => {
+      let user_response = models::UserResponse {
+        id: results.id,
+        username: results.username,
+        email: results.email
+      };
+      let encoded_user = encode(&Header::default(), &user_response, "secret".as_ref());
+      match encoded_user {
+        Ok(jwt) => HttpResponse::Ok().json(jwt),
+        Err(_) => HttpResponse::InternalServerError().into()
+      }
+    },
     Err(_) => HttpResponse::InternalServerError().into()
   }
 }
