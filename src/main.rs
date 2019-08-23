@@ -1,6 +1,7 @@
 extern crate openssl;
 #[macro_use]
 extern crate diesel;
+extern crate jsonwebtoken as jwt;
 
 mod schema;
 mod routes;
