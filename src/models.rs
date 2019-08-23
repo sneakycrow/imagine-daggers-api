@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::schema::users;
+use std::time::SystemTime;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SignupEmail {
@@ -16,7 +17,8 @@ pub struct User {
   pub id: String,
   pub username: String,
   pub password: String,
-  pub email: String
+  pub email: String,
+  pub registration_date: SystemTime
 }
 
 #[derive(Insertable)]
@@ -45,5 +47,7 @@ pub struct JsonUser {
 pub struct UserResponse {
   pub id: String,
   pub username: String,
-  pub email: String
+  pub email: String,
+  pub registration_date: SystemTime,
+  pub creation_timestamp: SystemTime,
 }

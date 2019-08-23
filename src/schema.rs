@@ -4,5 +4,6 @@ table! {
         username -> Varchar,
         password -> Varchar,
         email -> Varchar,
+        registration_date -> Timestamp,
     }
 }

@@ -4,6 +4,7 @@ use std::env;
 use actix_web::{web, Error, HttpResponse};
 use crate::models;
 use diesel::prelude::*;
+use std::time::SystemTime;
 use diesel::r2d2::{self, ConnectionManager};
 use uuid::Uuid;
 use diesel::pg::PgConnection;
@@ -59,8 +60,22 @@ pub fn register(
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     // run diesel blocking code
     web::block(move || create_user(item.into_inner(), pool)).then(|res| match res {
-        Ok(user) => Ok(HttpResponse::Ok().json(user)),
-        Err(_) => Ok(HttpResponse::InternalServerError().into()),
+        Ok(user) => {
+          let user_response = models::UserResponse {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            registration_date: user.registration_date,
+            creation_timestamp: SystemTime::now()
+          };
+          let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable is not set");
+          let encoded_user = encode(&Header::default(), &user_response, jwt_secret.as_ref());
+          match encoded_user {
+            Ok(jwt) => HttpResponse::Ok().json(jwt),
+            Err(_) => HttpResponse::InternalServerError().into()
+          }
+        },
+        Err(_) => HttpResponse::InternalServerError().into(),
     })
 }
 
@@ -82,9 +97,12 @@ pub fn login_user(
         let user_response = models::UserResponse {
           id: results.id,
           username: results.username,
-          email: results.email
+          email: results.email,
+          registration_date: results.registration_date,
+          creation_timestamp: SystemTime::now()
         };
-        let encoded_user = encode(&Header::default(), &user_response, "secret".as_ref());
+        let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable is not set");
+        let encoded_user = encode(&Header::default(), &user_response, jwt_secret.as_ref());
         match encoded_user {
           Ok(jwt) => HttpResponse::Ok().json(jwt),
           Err(_) => HttpResponse::InternalServerError().into()
@@ -126,7 +144,9 @@ pub fn get_user(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpRespon
       let user_response = models::UserResponse {
         id: results.id,
         username: results.username,
-        email: results.email
+        email: results.email,
+        registration_date: results.registration_date,
+        creation_timestamp: SystemTime::now()
       };
       let encoded_user = encode(&Header::default(), &user_response, "secret".as_ref());
       match encoded_user {
