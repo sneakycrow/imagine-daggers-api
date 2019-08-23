@@ -40,3 +40,10 @@ pub struct JsonUser {
   pub password: String,
   pub email: String
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserResponse {
+  pub id: String,
+  pub username: String,
+  pub email: String
+}
