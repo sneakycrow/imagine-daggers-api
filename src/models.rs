@@ -44,10 +44,17 @@ pub struct JsonUser {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UserResponse {
+pub struct UserJWT {
   pub id: String,
   pub username: String,
   pub email: String,
   pub registration_date: SystemTime,
   pub creation_timestamp: SystemTime,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserListSingle {
+  pub username: String,
+  pub email: String,
+  pub registration_date: SystemTime
 }

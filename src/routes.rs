@@ -61,7 +61,7 @@ pub fn register(
     // run diesel blocking code
     web::block(move || create_user(item.into_inner(), pool)).then(|res| match res {
         Ok(user) => {
-          let user_response = models::UserResponse {
+          let user_response = models::UserJWT {
             id: user.id,
             username: user.username,
             email: user.email,
@@ -94,7 +94,7 @@ pub fn login_user(
     Ok(results) => {
       let is_valid = verify(item.0.password, &results.password);
       if is_valid.unwrap() {
-        let user_response = models::UserResponse {
+        let user_response = models::UserJWT {
           id: results.id,
           username: results.username,
           email: results.email,
@@ -123,10 +123,21 @@ pub fn list_users(
 
     let conn: &PgConnection = &pool.get().unwrap();
 
-    let results = users.limit(5).load::<models::User>(conn);
+    let user_list = users.load::<models::User>(conn);
 
-    match results {
-      Ok(results) => HttpResponse::Ok().json(results),
+    match user_list {
+      Ok(user_list) => {
+        let mut user_list_response = Vec::new();
+        for user in user_list {
+          let user_response = models::UserListSingle {
+            email: user.email,
+            username: user.username,
+            registration_date: user.registration_date
+          };
+          user_list_response.push(user_response);
+        };
+        HttpResponse::Ok().json(user_list_response)
+      },
       Err(_) => HttpResponse::InternalServerError().into()
     }
 }
@@ -141,7 +152,7 @@ pub fn get_user(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpRespon
 
   match results {
     Ok(results) => {
-      let user_response = models::UserResponse {
+      let user_response = models::UserJWT {
         id: results.id,
         username: results.username,
         email: results.email,
