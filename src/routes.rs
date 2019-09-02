@@ -189,6 +189,22 @@ pub fn delete_user_by_id(path: web::Path<(String,)>, pool: web::Data<Pool>) -> H
   }
 }
 
+// Route for setting the users is_activated column in the users table to true
+pub fn activate_user(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpResponse {
+  use crate::schema::users::dsl::*;
+
+  let conn: &PgConnection = &pool.get().unwrap();
+
+  let results = diesel::update(users.find(&path.0))
+  .set(is_activated.eq(true))
+  .execute(conn);
+
+  match results {
+    Ok(_) => HttpResponse::Ok().into(),
+    Err(_) => HttpResponse::InternalServerError().into()
+  }
+}
+
 // Index route
 pub fn index() -> &'static str {
   "Hello World, from Imagine Daggers API"
