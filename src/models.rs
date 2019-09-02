@@ -18,7 +18,8 @@ pub struct User {
   pub username: String,
   pub password: String,
   pub email: String,
-  pub registration_date: SystemTime
+  pub registration_date: SystemTime,
+  pub is_activated: bool
 }
 
 #[derive(Insertable)]
@@ -27,7 +28,8 @@ pub struct NewUser<'a> {
   pub id: &'a str,
   pub username: &'a str,
   pub password: &'a str,
-  pub email: &'a str
+  pub email: &'a str,
+  pub is_activated: bool
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,7 +42,8 @@ pub struct UserLogin {
 pub struct JsonUser {
   pub username: String,
   pub password: String,
-  pub email: String
+  pub email: String,
+  pub is_activated: bool
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,11 +53,14 @@ pub struct UserJWT {
   pub email: String,
   pub registration_date: SystemTime,
   pub creation_timestamp: SystemTime,
+  pub is_activated: bool
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserListSingle {
+  pub id: String,
   pub username: String,
   pub email: String,
-  pub registration_date: SystemTime
+  pub registration_date: SystemTime,
+  pub is_activated: bool
 }

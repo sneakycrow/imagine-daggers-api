@@ -42,7 +42,8 @@ pub fn create_user<'a>(new_user: models::JsonUser, pool: web::Data<Pool>) -> Res
     id: &new_user_uuid,
     username: &new_user.username,
     password: &hashed_password.unwrap(),
-    email: &new_user.email
+    email: &new_user.email,
+    is_activated: false
   };
 
   diesel::insert_into(users)
@@ -66,7 +67,8 @@ pub fn register(
             username: user.username,
             email: user.email,
             registration_date: user.registration_date,
-            creation_timestamp: SystemTime::now()
+            creation_timestamp: SystemTime::now(),
+            is_activated: user.is_activated
           };
           let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable is not set");
           let encoded_user = encode(&Header::default(), &user_response, jwt_secret.as_ref());
@@ -99,7 +101,8 @@ pub fn login_user(
           username: results.username,
           email: results.email,
           registration_date: results.registration_date,
-          creation_timestamp: SystemTime::now()
+          creation_timestamp: SystemTime::now(),
+          is_activated: results.is_activated
         };
         let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable is not set");
         let encoded_user = encode(&Header::default(), &user_response, jwt_secret.as_ref());
@@ -130,9 +133,11 @@ pub fn list_users(
         let mut user_list_response = Vec::new();
         for user in user_list {
           let user_response = models::UserListSingle {
+            id: user.id,
             email: user.email,
             username: user.username,
-            registration_date: user.registration_date
+            registration_date: user.registration_date,
+            is_activated: user.is_activated
           };
           user_list_response.push(user_response);
         };
@@ -157,7 +162,8 @@ pub fn get_user_by_username(path: web::Path<(String,)>, pool: web::Data<Pool>) -
         username: results.username,
         email: results.email,
         registration_date: results.registration_date,
-        creation_timestamp: SystemTime::now()
+        creation_timestamp: SystemTime::now(),
+        is_activated: results.is_activated
       };
       let encoded_user = encode(&Header::default(), &user_response, "secret".as_ref());
       match encoded_user {
