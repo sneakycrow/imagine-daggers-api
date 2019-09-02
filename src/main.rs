@@ -12,7 +12,7 @@ use actix_cors::Cors;
 use dotenv::dotenv;
 use diesel::PgConnection;
 use diesel::r2d2::{self, ConnectionManager};
-use routes::{subscribe, index, register, list_users, get_user, login_user};
+use routes::{subscribe, index, register, list_users, get_user_by_username, login_user, delete_user_by_id};
 
 fn main() -> std::io::Result<()> {
   dotenv().ok();
@@ -41,8 +41,9 @@ fn main() -> std::io::Result<()> {
       .service(web::resource("/subscribe").route(web::post().to_async(subscribe)))
       .service(web::resource("/register").route(web::post().to_async(register)))
       .service(web::resource("/users").route(web::get().to(list_users)))
-      .service(web::resource("/users/{name}").route(web::get().to(get_user)))
+      .service(web::resource("/users/{username}").route(web::get().to(get_user_by_username)))
       .service(web::resource("/login").route(web::post().to(login_user)))
+      .service(web::resource("/delete/{user_id}").route(web::delete().to(delete_user_by_id)))
       .service(web::resource("/").to(index))
   })
   .bind(format!("0.0.0.0:{}", listen_port))?

@@ -143,7 +143,7 @@ pub fn list_users(
 }
 
 // Route for getting a specific user by email
-pub fn get_user(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpResponse {
+pub fn get_user_by_username(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpResponse {
   use crate::schema::users::dsl::*;
 
   let conn: &PgConnection = &pool.get().unwrap();
@@ -166,6 +166,20 @@ pub fn get_user(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpRespon
       }
     },
     Err(_) => HttpResponse::InternalServerError().into()
+  }
+}
+
+// Route for deleting a user by their user id
+pub fn delete_user_by_id(path: web::Path<(String,)>, pool: web::Data<Pool>) -> HttpResponse {
+  use crate::schema::users::dsl::*;
+
+  let conn: &PgConnection = &pool.get().unwrap();
+
+  let results = diesel::delete(users.filter(id.eq(&path.0))).execute(conn).expect("User could not be deleted");
+
+  match results {
+    1 => HttpResponse::Ok().into(),
+    _ => HttpResponse::InternalServerError().into()
   }
 }
 
