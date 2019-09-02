@@ -29,7 +29,7 @@ pub struct NewUser<'a> {
   pub username: &'a str,
   pub password: &'a str,
   pub email: &'a str,
-  pub is_activated: bool
+  pub is_activated: &'a bool
 }
 
 #[derive(Debug, Deserialize)]
@@ -42,8 +42,7 @@ pub struct UserLogin {
 pub struct JsonUser {
   pub username: String,
   pub password: String,
-  pub email: String,
-  pub is_activated: bool
+  pub email: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]

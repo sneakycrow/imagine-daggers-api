@@ -43,7 +43,7 @@ pub fn create_user<'a>(new_user: models::JsonUser, pool: web::Data<Pool>) -> Res
     username: &new_user.username,
     password: &hashed_password.unwrap(),
     email: &new_user.email,
-    is_activated: false
+    is_activated: &false
   };
 
   diesel::insert_into(users)
