@@ -5,5 +5,6 @@ table! {
         password -> Varchar,
         email -> Varchar,
         registration_date -> Timestamp,
+        is_activated -> Bool,
     }
 }
